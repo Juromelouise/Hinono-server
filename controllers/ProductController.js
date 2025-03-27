@@ -6,7 +6,8 @@ exports.createProduct = async (req, res) => {
     const images = await uploadMultiple(req.files, "products");
     req.body.images = images;
     const product = await Product.create(req.body);
-    return res.status(201).json({ data: product, success: true });
+    const products = await Product.find();
+    return res.status(201).json({ data: product, success: true, products });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
@@ -33,6 +34,18 @@ exports.getProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!req.files) {
+      await Product.findByIdAndUpdate(id, req.body);
+      const products = await Product.find();
+      return res.status(200).json({ success: true, products });
+    } else {
+      const images = await uploadMultiple(req.files, "products");
+      req.body.images = images;
+      await Product.findByIdAndUpdate(id, req.body);
+      const products = await Product.find();
+      return res.status(200).json({ success: true, products });
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
@@ -41,6 +54,10 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
+    const { id } = req.params;
+    await Product.findByIdAndDelete(id);
+    const products = await Product.find();
+    return res.status(200).json({ success: true, products });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
