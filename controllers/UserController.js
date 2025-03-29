@@ -130,3 +130,37 @@ exports.mobile = async (req, res) => {
     });
   }
 };
+
+exports.addAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.address.push(req.body.address);
+    await user.save();
+    res.status(200).json({
+      message: "Address added successfully",
+      newAddress: req.body.address,
+    });
+  } catch (error) {
+    console.error("Error adding address:", error);
+    res.status(500).json({ message: "Error adding address" });
+  }
+};
+
+exports.getAddresses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    console.log(user);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({
+      addresses: user.address,
+    });
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    res.status(500).json({ message: "Error fetching addresses" });
+  }
+}

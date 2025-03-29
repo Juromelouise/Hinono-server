@@ -4,6 +4,7 @@ const cors = require("cors");
 const session = require("express-session");
 const user = require("./routes/user");
 const product = require("./routes/product")
+const order = require("./routes/order");
 
 app.use(cors());
 app.use(express.json({ limit: "100mb" }));
@@ -20,5 +21,6 @@ app.use(
 
 app.use("/user", user);
 app.use("/product", product);
+app.use("/order", order);
 
 module.exports = app;

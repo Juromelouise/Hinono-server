@@ -4,9 +4,15 @@ const Populate = require("mongoose-autopopulate");
 const orderSchema = new mongoose.Schema({
   items: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      autopopulate: true,
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        autopopulate: true,
+      },
+      quantity: {
+        type: Number,
+        required: true,
+      },
     },
   ],
   user: {
