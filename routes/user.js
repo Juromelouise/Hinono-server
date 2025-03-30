@@ -17,6 +17,6 @@ route.post("/google/login", upload.single("avatar"), mobile);
 route.get("/profile", isAuthenticated, profile);
 route.post("/add-address", isAuthenticated, addAddress);
 route.get("/addresses", isAuthenticated, getAddresses);
-route.post("/update-push-token", isAuthenticated, updatePushToken)
+route.put("/update-push-token", isAuthenticated, updatePushToken)
 
 module.exports = route;
