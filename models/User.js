@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  pushToken: {
+    type: String,
+    default: null,
+  },
 });
 
 userSchema.pre("save", async function (next) {

@@ -163,4 +163,29 @@ exports.getAddresses = async (req, res) => {
     console.error("Error fetching addresses:", error);
     res.status(500).json({ message: "Error fetching addresses" });
   }
-}
+};
+
+exports.updatePushToken = async (req, res) => {
+  try {
+    const { expoPushToken } = req.body;
+    if (!expoPushToken) {
+      return res.status(400).json({ message: "Push token is required" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.pushToken = expoPushToken;
+    await user.save();
+
+    res.status(200).json({
+      message: "Push token updated successfully",
+      pushToken: user.pushToken,
+    });
+  } catch (error) {
+    console.error("Error updating push token:", error);
+    res.status(500).json({ message: "Error updating push token" });
+  }
+};
