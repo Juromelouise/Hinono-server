@@ -1,6 +1,5 @@
 const Order = require("../models/Order");
 const { Expo } = require("expo-server-sdk");
-const mongoose = require("mongoose");
 
 exports.createOrder = async (req, res) => {
   try {
@@ -49,14 +48,6 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-exports.getOrders = async (req, res) => {
-  try {
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ message: "Error fetching orders" });
-  }
-};
-
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -76,7 +67,7 @@ exports.getOrderById = async (req, res) => {
 
 exports.getOrdersByUser = async (req, res) => {
   try {
-    const orders = await Order.find({user: req.user.id});
+    const orders = await Order.find({ user: req.user.id });
 
     if (!orders) {
       return res.status(404).json({ message: "No orders found" });
@@ -88,5 +79,47 @@ exports.getOrdersByUser = async (req, res) => {
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Error fetching orders" });
+  }
+};
+
+exports.updateOrderQuantity = async (req, res) => {
+  try {
+    console.log("Request body:", req.body);
+    const { orderId, productId, quantity } = req.body;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const itemIndex = order.items.findIndex(
+      (item) => item.product.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "Product not found in order" });
+    }
+
+    if (quantity === 0) {
+      order.items.splice(itemIndex, 1);
+    } else {
+      order.items[itemIndex].quantity = quantity;
+    }
+
+    if (order.items.length === 0) {
+      await Order.findByIdAndDelete(orderId);
+      return res.status(200).json({ message: "Order deleted as it has no items left" });
+    }
+
+    await order.save();
+
+    res.status(200).json({
+      message: "Order updated successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Error updating order quantity:", error);
+    res.status(500).json({ message: "Error updating order quantity" });
   }
 };
