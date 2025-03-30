@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
-const { Expo } = require("expo-server-sdk");
+// const { Expo } = require("expo-server-sdk");
+const { pushNotification } = require("../utils/Notification");
 
 exports.createOrder = async (req, res) => {
   try {
@@ -20,23 +21,13 @@ exports.createOrder = async (req, res) => {
       2
     )}. Products: ${productNames}`;
 
-    const expo = new Expo();
     const pushToken = req.user.pushToken;
-
-    if (Expo.isExpoPushToken(pushToken)) {
-      const messages = [
-        {
-          to: pushToken,
-          sound: "default",
-          body: message,
-          data: { orderId: order._id },
-        },
-      ];
-
-      await expo.sendPushNotificationsAsync(messages);
-    } else {
-      console.error("Invalid Expo push token:", pushToken);
-    }
+    const data = {
+      title: "Order Confirmation",
+      message: message,
+      extraData: { orderId: order._id },
+    };
+    await pushNotification(data, pushToken);
 
     res.status(200).json({
       message: "Order created successfully",
@@ -84,7 +75,6 @@ exports.getOrdersByUser = async (req, res) => {
 
 exports.updateOrderQuantity = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
     const { orderId, productId, quantity } = req.body;
 
     const order = await Order.findById(orderId);
@@ -94,7 +84,7 @@ exports.updateOrderQuantity = async (req, res) => {
     }
 
     const itemIndex = order.items.findIndex(
-      (item) => item.product.toString() === productId
+      (item) => item.product._id.toString() === productId
     );
 
     if (itemIndex === -1) {
@@ -108,11 +98,30 @@ exports.updateOrderQuantity = async (req, res) => {
     }
 
     if (order.items.length === 0) {
-      await Order.findByIdAndDelete(orderId);
-      return res.status(200).json({ message: "Order deleted as it has no items left" });
+      const order = await Order.findByIdAndDelete(orderId);
+      return res
+        .status(200)
+        .json({ message: "Order deleted as it has no items left", order });
     }
 
+    order.totalPrice = order.items.reduce((total, item) => {
+      return total + item.product.price * item.quantity;
+    }, 0);
+
     await order.save();
+
+    const message = `Order updated successfully! Total: $${order.totalPrice.toFixed(
+      2
+    )}`;
+
+    const pushToken = req.user.pushToken;
+    const data = {
+      title: "Order Update",
+      message: message,
+      extraData: order,
+    };
+
+    await pushNotification(data, pushToken);
 
     res.status(200).json({
       message: "Order updated successfully",
@@ -121,5 +130,30 @@ exports.updateOrderQuantity = async (req, res) => {
   } catch (error) {
     console.error("Error updating order quantity:", error);
     res.status(500).json({ message: "Error updating order quantity" });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const data = {
+      title: "Order Cancellation",
+      message: "Your order has been cancelled successfully.",
+      extraData: order,
+    };
+
+    await pushNotification(data, req.user.pushToken);
+
+    res.status(200).json({
+      message: "Order deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    res.status(500).json({ message: "Error deleting order" });
   }
 };
