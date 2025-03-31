@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Populate = require("mongoose-autopopulate");
 
 const productSchema = new mongoose.Schema({
   name: {
@@ -14,11 +15,13 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  ratings: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Rating",
-    autopopulate: true,
-  },
+  ratings: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rating",
+      autopopulate: true,
+    },
+  ],
   images: [
     {
       public_id: {
@@ -41,5 +44,7 @@ const productSchema = new mongoose.Schema({
     default: 0,
   },
 });
+
+productSchema.plugin(Populate);
 
 module.exports = mongoose.model("Product", productSchema);
