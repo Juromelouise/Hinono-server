@@ -6,22 +6,19 @@ const bcrypt = require("bcrypt");
 
 exports.registerUser = async (req, res) => {
   try {
-    let image;
+    let avatar;
     if (req.file) {
-      image = await uploadSingle(req.file.path, "Avatar");
+      avatar = await uploadSingle(req.file.path, "Avatar");
     } else {
-      const defaultAvatarPath = path.join(
-        __dirname,
-        "../image/defaultavatar.png"
-      );
-      image = await uploadSingle(defaultAvatarPath, "Avatar");
+      return res.status(400).json({ message: "Avatar is required" });
     }
-    req.body.avatar = image;
+
+    req.body.avatar = avatar;
+
     const user = await User.create(req.body);
-    console.log(user);
     sendToken(user, 200, res);
-  } catch (e) {
-    console.error("Error in Creating user: ", e);
+  } catch (error) {
+    console.error("Error in Creating user: ", error);
     res.status(500).json({ message: "Error in Register User" });
   }
 };

@@ -38,19 +38,25 @@ exports.getProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!req.files) {
-      await Product.findByIdAndUpdate(id, req.body);
-      const products = await Product.find();
-      return res.status(200).json({ success: true, products });
+
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      req.body.images = existingProduct.images;
     } else {
       const images = await uploadMultiple(req.files, "products");
       req.body.images = images;
-      await Product.findByIdAndUpdate(id, req.body);
-      const products = await Product.find();
-      return res.status(200).json({ success: true, products });
     }
+
+    await Product.findByIdAndUpdate(id, req.body, { new: true });
+
+    const products = await Product.find();
+    return res.status(200).json({ success: true, products });
   } catch (error) {
-    console.log(error);
+    console.error("Error updating product:", error);
     return res.status(500).json({ message: error.message });
   }
 };
