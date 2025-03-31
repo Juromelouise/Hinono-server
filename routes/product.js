@@ -4,6 +4,7 @@ const {
   getProducts,
   updateProduct,
   deleteProduct,
+  promoteProduct,
 } = require("../controllers/ProductController");
 const upload = require("../utils/multer");
 const { isAuthenticated, Admin } = require("../middleware/auth");
@@ -24,4 +25,6 @@ route.put(
   updateProduct
 );
 route.delete("/:id", isAuthenticated, Admin, deleteProduct);
+route.post("/promotions", isAuthenticated, Admin, promoteProduct);
+
 module.exports = route;

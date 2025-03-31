@@ -1,6 +1,23 @@
 const Order = require("../models/Order");
-// const { Expo } = require("expo-server-sdk");
+const Product = require("../models/Product");
 const { pushNotification } = require("../utils/Notification");
+
+const updateProductStock = async (items) => {
+  try {
+    const bulkOperations = items.map((item) => ({
+      updateOne: {
+        filter: { _id: item.product._id },
+        update: { $inc: { stock: -item.quantity } },
+      },
+    }));
+
+    await Product.bulkWrite(bulkOperations);
+    console.log("Product stock updated successfully.");
+  } catch (error) {
+    console.error("Error updating product stock:", error);
+    throw new Error("Failed to update product stock.");
+  }
+};
 
 exports.createOrder = async (req, res) => {
   try {
@@ -155,5 +172,56 @@ exports.deleteOrder = async (req, res) => {
   } catch (error) {
     console.error("Error deleting order:", error);
     res.status(500).json({ message: "Error deleting order" });
+  }
+};
+
+exports.getAllPendingOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: "Pending" });
+
+    if (!orders) {
+      return res.status(404).json({ message: "No pending orders found" });
+    }
+
+    res.status(200).json({
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching pending orders:", error);
+    res.status(500).json({ message: "Error fetching pending orders" });
+  }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.status === "Shipping") {
+      await updateProductStock(order.items);
+    }
+
+    await pushNotification(
+      {
+        title: "Order Status Update",
+        message: `Your order status has been ${req.body.status}`,
+        extraData: { orderId: order._id },
+      },
+      order.user.pushToken
+    );
+    res.status(200).json({
+      message: "Order status updated successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    res.status(500).json({ message: "Error updating order status" });
   }
 };

@@ -1,5 +1,7 @@
 const Product = require("../models/Product");
 const { uploadMultiple } = require("../utils/Cloudinary");
+const { pushNotification } = require("../utils/Notification");
+const User = require("../models/User");
 
 exports.createProduct = async (req, res) => {
   try {
@@ -61,5 +63,40 @@ exports.deleteProduct = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.promoteProduct = async (req, res) => {
+  try {
+    const { productId, description, title } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const users = await User.find({ pushToken: { $ne: null } });
+    if (users.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No users with push tokens found" });
+    }
+
+    const notificationData = {
+      title: title,
+      message: description,
+      extraData: { product: product },
+    };
+
+    for (const user of users) {
+      await pushNotification(notificationData, user.pushToken);
+    }
+
+    res.status(200).json({
+      message: "Product promoted successfully and notifications sent",
+    });
+  } catch (error) {
+    console.error("Error promoting product:", error);
+    res.status(500).json({ message: "Error promoting product" });
   }
 };

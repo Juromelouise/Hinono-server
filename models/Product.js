@@ -16,7 +16,7 @@ const productSchema = new mongoose.Schema({
   },
   ratings: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Ratings",
+    ref: "Rating",
     autopopulate: true,
   },
   images: [
